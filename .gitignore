@@ -153,6 +153,7 @@ cython_debug/
 
 # Project Specific
 models/*.pth
-experiments/*.png
-experiments/*.jpg
+results/*.png
+results/*.jpg
+results/*.csv
 results/
