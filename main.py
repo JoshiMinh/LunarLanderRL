@@ -1,7 +1,7 @@
 import torch
 import numpy as np
 import time
-from core.custom_env import VastSpaceLander
+from core.game import VastSpaceLander
 from core.agent import DQNAgent
 
 def run_demo(checkpoint_path='models/checkpoint.pth'):
@@ -28,6 +28,16 @@ def run_demo(checkpoint_path='models/checkpoint.pth'):
             state, reward, terminated, truncated, info = env.step(action)
             score += reward
             time.sleep(0.01) # Faster demo
+            
+            if getattr(env, 'user_quit', False):
+                print("\n[Q] Pressed - Force Shutting Down...")
+                env.close()
+                import sys; sys.exit(0)
+                
+            if getattr(env, 'user_skip', False):
+                print(f"Episode {i+1} | [S] Pressed - Skipped!")
+                break
+            
             if terminated or truncated:
                 status = info.get('mission_status', 'failed')
                 color = "\033[92m" if status == 'success' else "\033[91m"

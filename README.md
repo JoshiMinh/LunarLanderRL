@@ -1,93 +1,98 @@
 # 🚀 LunarLanderRL: Reinforcement Learning (RL) Project
 
-Dự án này tập trung vào việc triển khai và đánh giá hiệu suất của các thuật toán Học Tăng Cường (Reinforcement Learning) trên môi trường **LunarLander**. Đây là một đồ án nghiên cứu kết hợp giữa kỹ thuật phần mềm chuẩn hóa và khả năng trực quan hóa thực nghiệm.
+This project focuses on implementing and evaluating the performance of Reinforcement Learning algorithms on the **LunarLander** environment. It is a research-oriented project that bridges standard software engineering constraints with experimental visualization.
 
 ---
 
-## 🌎 Nguồn gốc & Bối cảnh kỹ thuật
+## 🌎 Origins & Technical Background
 
-### 1. Gymnasium là gì?
-[Gymnasium](https://gymnasium.farama.org/) là một bộ thư viện tiêu chuẩn (Toolkit) mã nguồn mở dùng để phát triển và so sánh các thuật toán Reinforcement Learning. Nó cung cấp giao diện chuẩn hóa để "Agent" (Trí tuệ nhân tạo) có thể tương tác với "Environment" (Môi trường giả lập).
+### 1. What is Gymnasium?
+[Gymnasium](https://gymnasium.farama.org/) is an open-source standard library toolkit used for developing and comparing Reinforcement Learning algorithms. It provides a standardized interface so that an "Agent" (Artificial Intelligence) can interact with an "Environment" (Simulated Environment).
 
-### 2. Tại sao là `LunarLander-v2`?
-`LunarLander-v2` là một môi trường mô phỏng hạ cánh con tàu vũ trụ được phát triển bởi OpenAI. 
-*   **Tính kế thừa**: Đây là phiên bản đã được tinh chỉnh (v2) để đảm bảo các quy luật vật lý và hệ thống tính điểm ổn định nhất.
-*   **Hợp đồng kỹ thuật**: Trong lập trình, ID `LunarLander-v2` là một định danh cố định. Việc giữ đúng ID này là bắt buộc để thư viện Gymnasium có thể khởi tạo đúng các tham số môi trường chuẩn quốc tế.
-
----
-
-## 🏗️ Kiến trúc Hybrid (Tối ưu cho Đồ án)
-
-Dự án sử dụng mô hình **Hybrid (Lai)** để đáp ứng các tiêu chuẩn khắt khe của một đồ án đại học:
-
-1.  **Core Engine (`.py` files)**: Chứa logic cốt lõi (Module hóa). Việc tách riêng code vào các file Python giúp mã nguồn sạch sẽ, dễ dàng Debug và chứng minh khả năng tổ chức dự án chuyên nghiệp.
-2.  **Experimental Sandbox (`.ipynb` files)**: Sử dụng Jupyter Notebook để thực hiện các thí nghiệm, vẽ đồ thị so sánh (2D Graphs) và lưu lại kết quả huấn luyện. Đây là phần "báo cáo trực quan" quan trọng nhất để thuyết phục người xem.
-3.  **Live Showcase (UI/Game)**: Tích hợp chế độ Render trực tiếp để trình diễn Agent chơi game ở tốc độ thực tế, tạo trải nghiệm như một trò chơi điện tử hoàn chỉnh.
+### 2. Why `LunarLander-v2`?
+`LunarLander-v2` is a spacecraft landing simulation environment developed by OpenAI.
+*   **Legacy**: This is a fine-tuned version (v2) designed to ensure that physics rules and scoring systems are maximally stable.
+*   **Technical Contract**: In programming, the ID `LunarLander-v2` is a hardcoded identifier. Keeping this exact ID is strictly required so that the Gymnasium library can properly initialize international standard environment parameters.
 
 ---
 
-## 📊 Thông số môi trường
+## 🏗️ Hybrid Architecture (Optimized for Projects)
 
-| Thành phần | Đặc điểm chi tiết |
+The project leverages a **Hybrid** model to meet stringent academic structural standards:
+
+1.  **Core Engine (`.py` files)**: Houses the central logic (Modularization). Separating the code into purely distinct Python files keeps the source clean, easy to debug, and demonstrates professional project organization.
+2.  **Experimental Sandbox (`.ipynb` files)**: Utilizes Jupyter Notebooks to conduct experiments, plot comparative graphs (2D Graphs), and store training results. This acts as the most critical "visual report" aspect to convince reviewers.
+3.  **Live Showcase (UI/Game)**: Integrates immediate active rendering modes to demonstrate the agent performing at real-time speeds, simulating the experience of a complete video game.
+
+---
+
+## 📊 Environment Parameters
+
+| Component | Detailed Characteristic |
 | :--- | :--- |
-| **Môi trường** | `LunarLander-v2` (Định danh bắt buộc) |
-| **Trạng thái (8)** | Tọa độ (X, Y), Vận tốc (X, Y), Góc, Vận tốc góc, Tiếp xúc chân. |
-| **Hành động (4)** | Rời rạc: Tắt máy, Đẩy trái, Đẩy chính, Đẩy phải. |
-| **Phần thưởng** | +100 cho hạ cánh, -100 cho va chạm, phạt nhẹ theo mức dùng nhiên liệu. |
+| **Environment** | `LunarLander-v2` (Mandatory identifier) |
+| **State Vector (8)** | Coordinates (X, Y), Velocity (X, Y), Angle, Angular Velocity, Leg Contacts. |
+| **Action Space (4)** | Discrete: Do Nothing, Fire Left Engine, Fire Main Engine, Fire Right Engine. |
+| **Reward Function** | +100 for successful landing, -100 for crashing, minor penalties for fuel usage. |
 
 ---
 
-## 🧠 Các thuật toán triển khai (Models)
+## 🧠 Implemented Algorithms (Models)
 
-Dự án so sánh 3 kiến trúc mạng nơ-ron sâu (Deep Q-Network):
-*   **Vanilla DQN**: Nguyên bản mạng Q-learning sâu.
-*   **Double DQN**: Khắc phục lỗi ước tính quá cao (Overestimation) bằng cách tách biệt mạng chọn và mạng đánh giá.
-*   **Dueling DQN**: Chia mạng thành hai luồng độc lập: Giá trị trạng thái $V(s)$ và Lợi thế hành động $A(s, a)$.
+The project compares 3 Deep Q-Network architectures:
+*   **Vanilla DQN**: The original deep Q-learning network.
+*   **Double DQN**: Mitigates the overestimation error by decoupling the action selection network from the evaluation network.
+*   **Dueling DQN**: Splits the network into two independent streams: State Value $V(s)$ and Action Advantage $A(s, a)$.
 
 ---
 
-## 📁 Cấu trúc thư mục đề xuất
+## 📁 Proposed Folder Structure
 
 ```bash
 LunarLanderRL/
-├── core/               # Chứa logic tái sử dụng (Hybrid Core)
-│   ├── model.py        # Các kiến trúc mạng nơ-ron (PyTorch)
-│   ├── agent.py        # Logic DQN, Double DQN, Dueling DQN
-│   └── memory.py       # Bộ nhớ đệm (Experience Replay)
-├── experiments/        # Thí nghiệm & Đồ thị
-│   └── comparison.ipynb # So sánh 3 thuật toán & Vẽ đồ thị 2D
-├── demo.py             # Script trình diễn UI (Live Render)
-├── models/             # Lưu trữ trọng số (.pth) sau khi học xong
-└── README.md           # Hướng dẫn chi tiết
+├── core/               # Reusable logic components
+│   ├── game.py         # Gymnasium environment orchestrator wrapper
+│   ├── constants.py    # UI variables and polygon vectors
+│   ├── renderer.py     # Canvas graphics and interface handling
+│   ├── terrain.py      # Map generation math routines
+│   ├── model.py        # Neural Network architectures (PyTorch)
+│   ├── agent.py        # DQN, Double DQN, Dueling DQN logic
+│   └── memory.py       # Experience Replay queue buffering
+├── experiments/        # Experiments & Charts
+│   └── comparison.ipynb # 3 Algorithms Comparison & 2D Graph Plotting
+├── main.py             # Live demonstration script (Live Render)
+├── train.py            # Headless ML agent trainer 
+├── models/             # Contains completed weight (.pth) saves
+└── README.md           # Detailed Project Documentation
 ```
 
 ---
 
-## 🚀 Quy trình triển khai (Step-by-Step)
+## 🚀 Deployment Pipeline (Step-by-Step)
 
-### Bước 1: Chuẩn bị môi trường
-Cài đặt toolkit và framework:
+### Step 1: Environment Preparation
+Install the required toolkits and frameworks:
 ```bash
-pip install gymnasium[box2d] torch matplotlib tqdm
+pip install gymnasium[box2d] torch matplotlib tqdm pandas pygame
 ```
 
-### Bước 2: Thiết lập Logic lõi (Core)
-Xây dựng các lớp `DQN`, `DoubleDQN` trong thư mục `core/`. Luôn kiểm tra thiết bị tính toán:
+### Step 2: Establish Core Logic
+Build the `DQN` and `DoubleDQN` classes within the `core/` directory. Always check for graphical compute capability:
 ```python
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 ```
 
-### Bước 3: Huấn luyện & Phân tích (Notebook)
-Mở `comparison.ipynb` để chạy huấn luyện. Tại đây, bạn sẽ sử dụng `matplotlib` để vẽ đồ thị Reward và Loss qua từng Episode. Đây là cơ sở để đánh giá thuật toán nào hiệu quả hơn.
+### Step 3: Train & Analyze
+Launch `train.py` continuously, or use Jupyter to handle experiments with isolated variables. Utilize `matplotlib` to graph the Reward and Loss trajectories across historical episodes to determine learning efficacy.
 
-### Bước 4: Trình diễn (Live Demo)
-Sử dụng `demo.py` để quan sát Agent xuất sắc nhất trình diễn kỹ năng hạ cánh:
+### Step 4: Live Demo Presentation
+Launch `main.py` directly to observe the best-performing Agent showcasing its complex atmospheric landing trajectories:
 ```python
-# Chạy demo với chế độ "human" để mở cửa sổ game
-env = gym.make('LunarLander-v2', render_mode='human')
+# Launch the demo runner
+python main.py
 ```
 
 ---
 
-## 📝 Giấy phép
-Dự án được thực hiện phục vụ mục đích nghiên cứu học thuật và đồ án đại học.
+## 📝 License
+This project was implemented for the purposes of academic research and demonstration.

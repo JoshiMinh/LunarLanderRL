@@ -11,7 +11,7 @@ from collections import deque
 from tqdm import tqdm
 import time
 
-from core.custom_env import VastSpaceLander
+from core.game import VastSpaceLander
 from core.agent import DQNAgent
 
 def train(n_episodes=3000, max_t=2000, eps_start=1.0, eps_end=0.01, eps_decay=0.995, save_path='models/checkpoint.pth', log_path='results/training_log.csv'):
