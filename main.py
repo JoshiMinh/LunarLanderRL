@@ -20,17 +20,20 @@ def run_demo(checkpoint_path='models/checkpoint.pth'):
     else:
         agent.qnetwork_local.load_state_dict(torch.load(checkpoint_path, map_location=torch.device('cpu')))
 
-    for i in range(5): # Run 5 episodes
+    for i in range(10): # Run 10 episodes
         state, _ = env.reset()
         score = 0
-        for t in range(500):
+        for t in range(2000):
             action = agent.act(state, eps=0.0) # Greedy action
-            state, reward, terminated, truncated, _ = env.step(action)
+            state, reward, terminated, truncated, info = env.step(action)
             score += reward
-            time.sleep(0.02) # Slow down for visibility
+            time.sleep(0.01) # Faster demo
             if terminated or truncated:
+                status = info.get('mission_status', 'failed')
+                color = "\033[92m" if status == 'success' else "\033[91m"
+                reset = "\033[0m"
+                print(f"Episode {i+1} | Status: {color}{status.upper()}{reset} | Reward: {score:.2f}")
                 break 
-        print(f"Episode {i+1} Reward: {score:.2f}")
 
     env.close()
 

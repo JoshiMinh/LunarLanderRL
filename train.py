@@ -14,9 +14,9 @@ import time
 from core.custom_env import VastSpaceLander
 from core.agent import DQNAgent
 
-def train(n_episodes=2000, max_t=2000, eps_start=1.0, eps_end=0.01, eps_decay=0.996, save_path='models/checkpoint.pth', log_path='results/training_log.csv'):
+def train(n_episodes=3000, max_t=2000, eps_start=1.0, eps_end=0.01, eps_decay=0.995, save_path='models/checkpoint.pth', log_path='results/training_log.csv'):
     """
-    Cloud-Optimized Deep Q-Learning with CSV logging and headless support.
+    Cloud-Optimized Deep Q-Learning with CSV logging, resume support, and headless mode.
     """
     env = VastSpaceLander()
     state_size = env.observation_space.shape[0]
@@ -27,17 +27,37 @@ def train(n_episodes=2000, max_t=2000, eps_start=1.0, eps_end=0.01, eps_decay=0.
     
     agent = DQNAgent(state_size=state_size, action_size=action_size, seed=0, device=device)
     
-    scores = []                        
-    scores_window = deque(maxlen=100)  
-    eps = eps_start                    
-    
+    # --- Resume Support ---
+    start_episode = 1
+    rewards = []
+    rewards_window = deque(maxlen=100)
+    eps = eps_start
+    history = []
+
+    if os.path.exists(save_path):
+        print(f"Loading checkpoint from {save_path}...")
+        try:
+            agent.qnetwork_local.load_state_dict(torch.load(save_path, map_location=device))
+            agent.qnetwork_target.load_state_dict(torch.load(save_path, map_location=device))
+            
+            # Try to recover epsilon and episode count from log
+            if os.path.exists(log_path):
+                log_df = pd.read_csv(log_path)
+                if not log_df.empty:
+                    start_episode = int(log_df.iloc[-1]['episode']) + 1
+                    eps = float(log_df.iloc[-1]['epsilon'])
+                    history = log_df.to_dict('records')
+                    reward_col = 'reward' if 'reward' in log_df.columns else 'score'
+                    for s in log_df.tail(100)[reward_col]:
+                        rewards_window.append(s)
+                    print(f"Resuming from Episode {start_episode} with Epsilon {eps:.4f}")
+        except Exception as e:
+            print(f"Failed to load checkpoint: {e}. Starting from scratch.")
+
     os.makedirs(os.path.dirname(save_path), exist_ok=True)
     os.makedirs(os.path.dirname(log_path), exist_ok=True)
 
-    # Initialize Log DataFrame
-    history = []
-
-    pbar = tqdm(range(1, n_episodes + 1), desc="Training")
+    pbar = tqdm(range(start_episode, n_episodes + 1), desc="Training")
     for i_episode in pbar:
         state, _ = env.reset()
         score = 0
@@ -54,31 +74,30 @@ def train(n_episodes=2000, max_t=2000, eps_start=1.0, eps_end=0.01, eps_decay=0.
                 break 
         
         duration = time.time() - start_time
-        scores_window.append(score)
-        scores.append(score)
+        rewards_window.append(score)
+        rewards.append(score)
         eps = max(eps_end, eps_decay * eps)
         
         # Log to list
         history.append({
             'episode': i_episode,
-            'score': score,
-            'avg_score': np.mean(scores_window),
+            'reward': score,
+            'avg_reward': np.mean(rewards_window),
             'epsilon': eps,
             'duration': duration
         })
 
         pbar.set_postfix({
-            'Avg': f'{np.mean(scores_window):.1f}',
+            'AvgReward': f'{np.mean(rewards_window):.1f}',
             'Eps': f'{eps:.2f}'
         })
         
-        # Periodic Save & Log Dump
         if i_episode % 50 == 0:
             torch.save(agent.qnetwork_local.state_dict(), save_path)
             pd.DataFrame(history).to_csv(log_path, index=False)
             
-        if np.mean(scores_window) >= 200.0:
-            print(f'\nEnvironment solved in {i_episode:d} episodes!\tAverage Score: {np.mean(scores_window):.2f}')
+        if len(rewards_window) >= 100 and np.mean(rewards_window) >= 200.0:
+            print(f'\nEnvironment solved in {i_episode:d} episodes!\tAverage Reward: {np.mean(rewards_window):.2f}')
             torch.save(agent.qnetwork_local.state_dict(), save_path)
             pd.DataFrame(history).to_csv(log_path, index=False)
             break
@@ -86,5 +105,12 @@ def train(n_episodes=2000, max_t=2000, eps_start=1.0, eps_end=0.01, eps_decay=0.
     return history
 
 if __name__ == "__main__":
-    history = train()
-    print("Training complete. Log saved to experiments/training_log.csv")
+    import argparse
+    parser = argparse.ArgumentParser(description="Train Lunar Lander RL Agent")
+    parser.add_argument("--episodes", type=int, default=3000, help="Total number of episodes")
+    parser.add_argument("--save_path", type=str, default='models/checkpoint.pth', help="Path to save model")
+    parser.add_argument("--log_path", type=str, default='results/training_log.csv', help="Path to save logs")
+    args = parser.parse_args()
+
+    history = train(n_episodes=args.episodes, save_path=args.save_path, log_path=args.log_path)
+    print(f"Training complete. Last episode in log: {history[-1]['episode'] if history else 'None'}")

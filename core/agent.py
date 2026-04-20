@@ -8,11 +8,11 @@ from core.model import QNetwork
 from core.memory import ReplayBuffer
 
 BUFFER_SIZE = int(1e5)  # replay buffer size
-BATCH_SIZE = 64         # minibatch size
+BATCH_SIZE = 128         # minibatch size
 GAMMA = 0.99            # discount factor
 TAU = 1e-3              # for soft update of target parameters
-LR = 5e-4               # learning rate 
-UPDATE_EVERY = 4        # how often to update the network
+LR = 3e-4               # learning rate 
+UPDATE_EVERY = 4        # more stable updates
 
 class DQNAgent:
     """Interacts with and learns from the environment."""
@@ -108,6 +108,8 @@ class DQNAgent:
         # Minimize the loss
         self.optimizer.zero_grad()
         loss.backward()
+        # Gradient Clipping
+        torch.nn.utils.clip_grad_norm_(self.qnetwork_local.parameters(), 1.0)
         self.optimizer.step()
 
         # ------------------- update target network ------------------- #

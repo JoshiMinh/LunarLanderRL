@@ -152,8 +152,11 @@ cython_debug/
 .vscode/
 
 # Project Specific
-models/*.pth
+# Allow key files for GitHub Actions Sync
+!models/checkpoint.pth
+!results/training_log.csv
+
+# Keep ignoring other temporary results
 results/*.png
 results/*.jpg
-results/*.csv
-results/
+results/*.mp4

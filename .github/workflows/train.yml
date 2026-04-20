@@ -1,0 +1,52 @@
+name: Automated Training & Sync
+
+on:
+  push:
+    branches: [ main ]
+    paths-ignore:
+      - 'models/**'
+      - 'results/**'
+      - 'README.md'
+      - 'walkthrough.md'
+      - 'implementation_plan.md'
+  workflow_dispatch: # Allow manual trigger
+
+jobs:
+  train:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+    - name: Checkout Code
+      uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.10'
+        cache: 'pip'
+
+    - name: Install System Dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y swig
+
+    - name: Install Python Dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install gymnasium[box2d] torch pandas tqdm numpy pygame
+
+    - name: Run Training
+      run: |
+        # Run training for 3000 episodes
+        # It will automatically resume if checkpoint.pth exists in the repo
+        python train.py --episodes 3000
+
+    - name: Commit & Push Progress
+      uses: stefanzweifel/git-auto-commit-action@v5
+      with:
+        commit_message: "model: auto-update trained weights [skip ci]"
+        file_pattern: 'models/checkpoint.pth results/training_log.csv'
+        skip_dirty_check: false    
+        skip_fetch: true          
