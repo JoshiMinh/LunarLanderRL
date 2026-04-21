@@ -27,7 +27,7 @@ class Renderer:
             pygame.init()
             pygame.font.init()
             self.screen = pygame.display.set_mode((CUSTOM_VIEWPORT_W, CUSTOM_VIEWPORT_H))
-            pygame.display.set_caption("LunarLanderRL - NASA High Fidelity")
+            pygame.display.set_caption("LunarLanderRL")
         
         if self.clock is None: 
             self.clock = pygame.time.Clock()

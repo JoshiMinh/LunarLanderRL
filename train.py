@@ -12,9 +12,10 @@ from tqdm import tqdm
 import time
 
 from core.game import VastSpaceLander
+from gymnasium.envs.box2d.lunar_lander import FPS
 from core.agent import DQNAgent
 
-def train(n_episodes=3000, max_t=2000, eps_start=1.0, eps_end=0.01, eps_decay=0.995, save_path='models/checkpoint.pth', log_path='results/training_log.csv', reset=False):
+def train(n_episodes=3000, max_t=FPS * 60 * 5, eps_start=1.0, eps_end=0.01, eps_decay=0.995, save_path='models/checkpoint.pth', log_path='results/training_log.csv', reset=False):
     """
     Cloud-Optimized Deep Q-Learning with CSV logging, resume support, and headless mode.
     """
@@ -65,50 +66,64 @@ def train(n_episodes=3000, max_t=2000, eps_start=1.0, eps_end=0.01, eps_decay=0.
     os.makedirs(os.path.dirname(save_path), exist_ok=True)
     os.makedirs(os.path.dirname(log_path), exist_ok=True)
 
+    interrupted = False
     pbar = tqdm(range(start_episode, n_episodes + 1), desc="Training")
-    for i_episode in pbar:
-        state, _ = env.reset()
-        score = 0
-        start_time = time.time()
-        
-        for t in range(max_t):
-            action = agent.act(state, eps)
-            next_state, reward, terminated, truncated, _ = env.step(action)
-            done = terminated or truncated
-            agent.step(state, action, reward, next_state, done)
-            state = next_state
-            score += reward
-            if done:
-                break 
-        
-        duration = time.time() - start_time
-        rewards_window.append(score)
-        rewards.append(score)
-        eps = max(eps_end, eps_decay * eps)
-        
-        # Log to list
-        history.append({
-            'episode': i_episode,
-            'reward': score,
-            'avg_reward': np.mean(rewards_window),
-            'epsilon': eps,
-            'duration': duration
-        })
-
-        pbar.set_postfix({
-            'AvgReward': f'{np.mean(rewards_window):.1f}',
-            'Eps': f'{eps:.2f}'
-        })
-        
-        if i_episode % 50 == 0:
-            torch.save(agent.qnetwork_local.state_dict(), save_path)
-            pd.DataFrame(history).to_csv(log_path, index=False)
+    try:
+        for i_episode in pbar:
+            state, _ = env.reset()
+            score = 0
+            start_time = time.time()
             
-        if len(rewards_window) >= 100 and np.mean(rewards_window) >= 200.0:
-            print(f'\nEnvironment solved in {i_episode:d} episodes!\tAverage Reward: {np.mean(rewards_window):.2f}')
+            for t in range(max_t):
+                action = agent.act(state, eps)
+                next_state, reward, terminated, truncated, _ = env.step(action)
+                done = terminated or truncated
+                agent.step(state, action, reward, next_state, done)
+                state = next_state
+                score += reward
+                if done:
+                    break 
+            
+            duration = time.time() - start_time
+            rewards_window.append(score)
+            rewards.append(score)
+            eps = max(eps_end, eps_decay * eps)
+            
+            # Log to list
+            history.append({
+                'episode': i_episode,
+                'reward': score,
+                'avg_reward': np.mean(rewards_window),
+                'epsilon': eps,
+                'duration': duration
+            })
+
+            pbar.set_postfix({
+                'AvgReward': f'{np.mean(rewards_window):.1f}',
+                'Eps': f'{eps:.2f}'
+            })
+            
+            if i_episode % 50 == 0:
+                torch.save(agent.qnetwork_local.state_dict(), save_path)
+                pd.DataFrame(history).to_csv(log_path, index=False)
+                
+            if len(rewards_window) >= 100 and np.mean(rewards_window) >= 200.0:
+                print(f'\nEnvironment solved in {i_episode:d} episodes!\tAverage Reward: {np.mean(rewards_window):.2f}')
+                torch.save(agent.qnetwork_local.state_dict(), save_path)
+                pd.DataFrame(history).to_csv(log_path, index=False)
+                break
+    except KeyboardInterrupt:
+        interrupted = True
+        print("\nTraining interrupted by user (Ctrl+C). Saving progress...")
+    finally:
+        if history:
             torch.save(agent.qnetwork_local.state_dict(), save_path)
             pd.DataFrame(history).to_csv(log_path, index=False)
-            break
+            if interrupted:
+                last_ep = history[-1]['episode']
+                print(f"Saved checkpoint and logs up to episode {last_ep}.")
+        elif interrupted:
+            print("No completed episodes yet; nothing to save.")
             
     return history
 

@@ -2,7 +2,7 @@ import numpy as np
 import gymnasium as gym
 import Box2D
 from Box2D.b2 import fixtureDef, polygonShape, revoluteJointDef
-from gymnasium.envs.box2d.lunar_lander import LunarLander, INITIAL_RANDOM, SCALE
+from gymnasium.envs.box2d.lunar_lander import LunarLander, INITIAL_RANDOM, SCALE, FPS
 
 from core.constants import WORLD_W, WORLD_H, MODERN_LANDER_POLY
 from core.terrain import generate_cosmos, build_lunar_surface
@@ -19,6 +19,10 @@ class VastSpaceLander(LunarLander):
         self.mission_status = None # 'success' or 'failed'
         self.user_quit = False
         self.user_skip = False
+        self.step_count = 0
+        self.max_episode_steps = FPS * 60 * 5
+        self.success_wait_steps = FPS * 10
+        self.success_timer_steps = 0
         
         import core.constants as const
         self.stars = generate_cosmos(const.CUSTOM_VIEWPORT_W, const.CUSTOM_VIEWPORT_H)
@@ -30,6 +34,8 @@ class VastSpaceLander(LunarLander):
     def reset(self, *, seed=None, options=None):
         self.custom_prev_shaping = None
         self.user_skip = False
+        self.step_count = 0
+        self.success_timer_steps = 0
         super().reset(seed=seed, options=options)
         self._rebuild_world_for_realism()
         if self.render_mode == "human":
@@ -117,6 +123,20 @@ class VastSpaceLander(LunarLander):
         return np.array(state, dtype=np.float32)
 
     def step(self, action):
+        self.step_count += 1
+
+        # User can mark the episode as failed manually.
+        if self.user_skip:
+            self.user_skip = False
+            self.mission_status = 'failed'
+            state = self._get_observation()
+            info = {'mission_status': self.mission_status, 'fuel': self.fuel}
+            return state, -100.0, True, False, info
+
+        # During success showcase window, keep engines off and count down.
+        if self.mission_status == 'success' and self.success_timer_steps > 0:
+            action = 0
+
         # 0. Fuel Depletion
         if self.fuel <= 0:
             action = 0 
@@ -158,9 +178,19 @@ class VastSpaceLander(LunarLander):
         else:
             reward = 0
         self.custom_prev_shaping = shaping
+
+        # Small living cost to avoid policy stalling/hovering for too long.
+        reward -= 0.03
         
         if action != 0:
             reward -= 0.1
+
+        # Penalize sustained hover near the pad without committing to touchdown.
+        no_leg_contact = (state[6] == 0.0 and state[7] == 0.0)
+        near_pad = (dist_x < 0.15 and dist_y < 0.35)
+        near_zero_vertical = abs(state[3]) < 0.05
+        if self.mission_status != 'success' and no_leg_contact and near_pad and near_zero_vertical:
+            reward -= 0.25
 
         # 4. Success/Failure Detection
         terminated = False
@@ -171,32 +201,25 @@ class VastSpaceLander(LunarLander):
         safe_vel = (abs(state[2]) < 0.1 and abs(state[3]) < 0.1) # Safe impact velocity
         safe_angle = (abs(state[4]) < 0.2) # Safe angle (~11 degrees)
 
-        if self.game_over or (legs_contact and safe_vel):
-            terminated = True
-            if legs_contact and on_pad and safe_vel and safe_angle:
-                self.mission_status = 'success'
-                reward += 100
-            else:
-                self.mission_status = 'failed'
-                reward -= 100
-        
-        # Custom Out of bounds check
-        pos_x = self.lander.position.x
-        pos_y = self.lander.position.y
-        if pos_x < 0 or pos_x > WORLD_W or pos_y > WORLD_H * 2 or pos_y < 0:
+        if self.mission_status == 'success':
+            self.success_timer_steps -= 1
+            reward = 0.0
+            if self.success_timer_steps <= 0:
+                terminated = True
+        # Latch success and keep episode alive for a short showcase window.
+        elif legs_contact and on_pad and safe_vel and safe_angle:
+            self.mission_status = 'success'
+            reward += 180
+            self.success_timer_steps = self.success_wait_steps
+        # Fail only on crash contact.
+        elif self.game_over:
             terminated = True
             self.mission_status = 'failed'
-            reward -= 2000 # Massive penalty for going out of bounds to stop it from escaping the border
+            reward -= 120
 
-        if self.fuel <= 0 and not terminated:
-            # Check if it can still fall to ground
-            if self.lander.linearVelocity.y > 0 and pos_y < 10:
-                pass # Still falling
-            elif self.lander.linearVelocity.y <= 0 and pos_y < 5:
-                terminated = True
-                self.mission_status = 'failed' # Out of fuel and stuck/crashed
-
-        truncated = False
+        truncated = (self.step_count >= self.max_episode_steps) and (not terminated)
+        if truncated and self.mission_status is None:
+            self.mission_status = 'timeout'
         info['mission_status'] = self.mission_status
         info['fuel'] = self.fuel
         

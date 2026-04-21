@@ -23,7 +23,7 @@ def run_demo(checkpoint_path='models/checkpoint.pth'):
     for i in range(10): # Run 10 episodes
         state, _ = env.reset()
         score = 0
-        for t in range(2000):
+        for t in range(env.max_episode_steps):
             action = agent.act(state, eps=0.0) # Greedy action
             state, reward, terminated, truncated, info = env.step(action)
             score += reward
@@ -34,10 +34,6 @@ def run_demo(checkpoint_path='models/checkpoint.pth'):
                 env.close()
                 import sys; sys.exit(0)
                 
-            if getattr(env, 'user_skip', False):
-                print(f"Episode {i+1} | [S] Pressed - Skipped!")
-                break
-            
             if terminated or truncated:
                 status = info.get('mission_status', 'failed')
                 color = "\033[92m" if status == 'success' else "\033[91m"
