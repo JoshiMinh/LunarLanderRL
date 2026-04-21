@@ -14,7 +14,7 @@ import time
 from core.game import VastSpaceLander
 from core.agent import DQNAgent
 
-def train(n_episodes=3000, max_t=2000, eps_start=1.0, eps_end=0.01, eps_decay=0.995, save_path='models/checkpoint.pth', log_path='results/training_log.csv'):
+def train(n_episodes=3000, max_t=2000, eps_start=1.0, eps_end=0.01, eps_decay=0.995, save_path='models/checkpoint.pth', log_path='results/training_log.csv', reset=False):
     """
     Cloud-Optimized Deep Q-Learning with CSV logging, resume support, and headless mode.
     """
@@ -34,7 +34,15 @@ def train(n_episodes=3000, max_t=2000, eps_start=1.0, eps_end=0.01, eps_decay=0.
     eps = eps_start
     history = []
 
-    if os.path.exists(save_path):
+    if reset:
+        print("Reset flag detected. Starting training from scratch...")
+        if os.path.exists(save_path):
+            os.remove(save_path)
+            print(f"Deleted old checkpoint: {save_path}")
+        if os.path.exists(log_path):
+            os.remove(log_path)
+            print(f"Deleted old logs: {log_path}")
+    elif os.path.exists(save_path):
         print(f"Loading checkpoint from {save_path}...")
         try:
             agent.qnetwork_local.load_state_dict(torch.load(save_path, map_location=device))
@@ -110,7 +118,8 @@ if __name__ == "__main__":
     parser.add_argument("--episodes", type=int, default=3000, help="Total number of episodes")
     parser.add_argument("--save_path", type=str, default='models/checkpoint.pth', help="Path to save model")
     parser.add_argument("--log_path", type=str, default='results/training_log.csv', help="Path to save logs")
+    parser.add_argument("--reset", action="store_true", help="Start training from scratch, ignoring and deleting existing checkpoints/logs")
     args = parser.parse_args()
 
-    history = train(n_episodes=args.episodes, save_path=args.save_path, log_path=args.log_path)
+    history = train(n_episodes=args.episodes, save_path=args.save_path, log_path=args.log_path, reset=args.reset)
     print(f"Training complete. Last episode in log: {history[-1]['episode'] if history else 'None'}")
