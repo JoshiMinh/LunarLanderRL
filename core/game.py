@@ -150,7 +150,8 @@ class VastSpaceLander(LunarLander):
         # 3. Custom Reward (Distance to Pad)
         dist_x = abs(state[0])
         dist_y = abs(state[1])
-        shaping = -100 * (dist_x + dist_y) - 100 * (abs(state[2]) + abs(state[3])) - 100 * abs(state[4])
+        # Reduced velocity penalty so the agent isn't terrified of falling
+        shaping = -100 * (dist_x + dist_y) - 50 * (abs(state[2]) + abs(state[3])) - 100 * abs(state[4])
         
         if self.custom_prev_shaping is not None:
             reward = shaping - self.custom_prev_shaping
@@ -185,7 +186,7 @@ class VastSpaceLander(LunarLander):
         if pos_x < 0 or pos_x > WORLD_W or pos_y > WORLD_H * 2 or pos_y < 0:
             terminated = True
             self.mission_status = 'failed'
-            reward = -100
+            reward -= 2000 # Massive penalty for going out of bounds to stop it from escaping the border
 
         if self.fuel <= 0 and not terminated:
             # Check if it can still fall to ground

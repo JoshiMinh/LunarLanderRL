@@ -1,98 +1,127 @@
-# 🚀 LunarLanderRL: Reinforcement Learning (RL) Project
+# 🚀 LunarLanderRL: Advanced Deep Reinforcement Learning
 
-This project focuses on implementing and evaluating the performance of Reinforcement Learning algorithms on the **LunarLander** environment. It is a research-oriented project that bridges standard software engineering constraints with experimental visualization.
+[![Python 3.8+](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
+[![PyTorch](https://img.shields.io/badge/PyTorch-EE4C2C?logo=pytorch&logoColor=white)](https://pytorch.org/)
+[![Gymnasium](https://img.shields.io/badge/Gymnasium-20B2AA?logo=openai&logoColor=white)](https://gymnasium.farama.org/)
 
----
-
-## 🌎 Origins & Technical Background
-
-### 1. What is Gymnasium?
-[Gymnasium](https://gymnasium.farama.org/) is an open-source standard library toolkit used for developing and comparing Reinforcement Learning algorithms. It provides a standardized interface so that an "Agent" (Artificial Intelligence) can interact with an "Environment" (Simulated Environment).
-
-### 2. Why `LunarLander-v2`?
-`LunarLander-v2` is a spacecraft landing simulation environment developed by OpenAI.
-*   **Legacy**: This is a fine-tuned version (v2) designed to ensure that physics rules and scoring systems are maximally stable.
-*   **Technical Contract**: In programming, the ID `LunarLander-v2` is a hardcoded identifier. Keeping this exact ID is strictly required so that the Gymnasium library can properly initialize international standard environment parameters.
+An ultra-modern reinforcement learning project featuring a custom **VastSpaceLander** environment and a sophisticated **DQN Agent** capable of atmospheric descent handling, fuel management, and precision landing.
 
 ---
 
-## 🏗️ Hybrid Architecture (Optimized for Projects)
+## 🧠 Deep Q-Learning (DQN) Explained
 
-The project leverages a **Hybrid** model to meet stringent academic structural standards:
+### What is DQN?
+Deep Q-Learning (DQN) is a Reinforcement Learning algorithm that combines **Q-Learning** with **Deep Neural Networks**. In standard Q-Learning, we maintain a table (Q-table) for every possible state-action pair. In complex environments like Lunar Lander, the state space is continuous and infinite, making a table impossible. DQN solves this by using a Neural Network as a function approximator to estimate the Q-values.
 
-1.  **Core Engine (`.py` files)**: Houses the central logic (Modularization). Separating the code into purely distinct Python files keeps the source clean, easy to debug, and demonstrates professional project organization.
-2.  **Experimental Sandbox (`.ipynb` files)**: Utilizes Jupyter Notebooks to conduct experiments, plot comparative graphs (2D Graphs), and store training results. This acts as the most critical "visual report" aspect to convince reviewers.
-3.  **Live Showcase (UI/Game)**: Integrates immediate active rendering modes to demonstrate the agent performing at real-time speeds, simulating the experience of a complete video game.
+**The Goal**: Find a policy $\pi$ that maximizes the expected cumulative reward:
+$$Q^\pi(s, a) = \mathbb{E} \left[ \sum_{t=0}^{\infty} \gamma^t r_t | s_0=s, a_0=a, \pi \right]$$
 
----
-
-## 📊 Environment Parameters
-
-| Component | Detailed Characteristic |
-| :--- | :--- |
-| **Environment** | `LunarLander-v2` (Mandatory identifier) |
-| **State Vector (8)** | Coordinates (X, Y), Velocity (X, Y), Angle, Angular Velocity, Leg Contacts. |
-| **Action Space (4)** | Discrete: Do Nothing, Fire Left Engine, Fire Main Engine, Fire Right Engine. |
-| **Reward Function** | +100 for successful landing, -100 for crashing, minor penalties for fuel usage. |
+### How it Works (The Bellman Equation)
+The agent learns by minimizing the difference between its current prediction and the "TD Target" (Temporal Difference):
+$$\text{Loss} = \mathbb{E} \left[ (r + \gamma \max_{a'} Q(s', a'; \theta^-) - Q(s, a; \theta))^2 \right]$$
 
 ---
 
-## 🧠 Implemented Algorithms (Models)
+## 🏗️ Model Architecture & Structure
 
-The project compares 3 Deep Q-Network architectures:
-*   **Vanilla DQN**: The original deep Q-learning network.
-*   **Double DQN**: Mitigates the overestimation error by decoupling the action selection network from the evaluation network.
-*   **Dueling DQN**: Splits the network into two independent streams: State Value $V(s)$ and Action Advantage $A(s, a)$.
+The project implements a modular **3-Layer Multi-Layer Perceptron (MLP)** with advanced architectural enhancements.
 
----
+### 📐 State & Action Space
+- **State Vector (9-Dimensional)**:
+  1. `pos_x`, `pos_y`: Localized coordinates relative to the landing pad.
+  2. `vel_x`, `vel_y`: Linear velocities.
+  3. `angle`: Orientation of the lander.
+  4. `angular_vel`: Rotation speed.
+  5. `leg_1_contact`, `leg_2_contact`: Binary indicators (0/1).
+  6. `fuel_level`: Remaining fuel percentage (Normalized).
+- **Action Space (4-Discrete)**:
+  - `0`: Do nothing.
+  - `1`: Fire Left Engine.
+  - `2`: Fire Main Engine.
+  - `3`: Fire Right Engine.
 
-## 📁 Proposed Folder Structure
+### 🧬 Advanced DQN Variants
+This project supports and implements:
+1.  **Double DQN**: Decouples action selection from target evaluation to prevent overestimation bias.
+2.  **Dueling DQN**: Splits the network into two streams:
+    -   **Value Stream $V(s)$**: Estimating how good the state is.
+    -   **Advantage Stream $A(s, a)$**: Estimating the relative benefit of each action.
+    -   Combined via: $Q(s, a) = V(s) + (A(s, a) - \frac{1}{|A|} \sum A(s, a'))$
 
-```bash
-LunarLanderRL/
-├── core/               # Reusable logic components
-│   ├── game.py         # Gymnasium environment orchestrator wrapper
-│   ├── constants.py    # UI variables and polygon vectors
-│   ├── renderer.py     # Canvas graphics and interface handling
-│   ├── terrain.py      # Map generation math routines
-│   ├── model.py        # Neural Network architectures (PyTorch)
-│   ├── agent.py        # DQN, Double DQN, Dueling DQN logic
-│   └── memory.py       # Experience Replay queue buffering
-├── experiments/        # Experiments & Charts
-│   └── comparison.ipynb # 3 Algorithms Comparison & 2D Graph Plotting
-├── main.py             # Live demonstration script (Live Render)
-├── train.py            # Headless ML agent trainer 
-├── models/             # Contains completed weight (.pth) saves
-└── README.md           # Detailed Project Documentation
+```mermaid
+graph LR
+    S[9D State Input] --> H1[Dense 128 + ReLU]
+    H1 --> H2[Dense 128 + ReLU]
+    H2 --> V[Value Stream]
+    H2 --> A[Advantage Stream]
+    V --> Q[Output: 4 Q-Values]
+    A --> Q
 ```
 
 ---
 
-## 🚀 Deployment Pipeline (Step-by-Step)
+## 🚀 Training Mechanics
 
-### Step 1: Environment Preparation
-Install the required toolkits and frameworks:
+The training process is engineered for stability and fast convergence in a high-gravity, vast-landscape environment.
+
+### 1. Experience Replay
+We store the agent's experiences $(s, a, r, s', \text{done})$ in a **Replay Buffer** (Size: $10^5$). Every 4 steps, we sample a random minibatch of 128 experiences to break the temporal correlation of data, allowing the model to learn from past successes and failures multiple times.
+
+### 2. Fixed Q-Targets & Soft Updates
+To prevent the "chasing its own tail" problem where the target moves as the model updates, we use a separate **Target Network**.
+- **Soft Update**: Instead of periodic hard resets, we use a smoothing parameter $\tau = 0.001$:
+  $$\theta_{target} \leftarrow \tau \theta_{local} + (1 - \tau) \theta_{target}$$
+
+### 3. Reward Shaping Logic
+The reward function is heavily customized for the "Vast Space" environment:
+- **Distance Penalty**: Penalizes distance from the landing pad.
+- **Velocity Control**: Encourages slow, controlled descents.
+- **Boundary Handling**: A massive **-2000 penalty** if the lander flies out of the simulation borders, teaching the agent strict spatial constraints.
+- **Landing Bonus**: **+100** for a successful landing with both legs on the pad at safe speeds.
+
+---
+
+## 📁 Repository Structure
+
+```bash
+LunarLanderRL/
+├── core/               # Engineering Core
+│   ├── agent.py        # DQNAgent logic (Double/Dueling/Soft-Updates)
+│   ├── model.py        # PyTorch Neural Network architecture
+│   ├── game.py         # VastSpaceLander (Gymnasium Env Wrapper)
+│   ├── memory.py       # Experience Replay Implementation
+│   ├── constants.py    # Physics constants & Visual assets
+│   └── renderer.py     # Custom PyGame Rendering engine
+├── models/             # Trained Weights (.pth files)
+├── results/            # Training Logs & CSV analysis
+├── train.py            # Headless Training Script
+└── main.py             # Live Demonstration / Playable Demo
+```
+
+---
+
+## 🛠️ Getting Started
+
+### Installation
 ```bash
 pip install gymnasium[box2d] torch matplotlib tqdm pandas pygame
 ```
 
-### Step 2: Establish Core Logic
-Build the `DQN` and `DoubleDQN` classes within the `core/` directory. Always check for graphical compute capability:
-```python
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+### Training the Agent
+Run the training script in headless mode (optimized for servers):
+```bash
+python train.py --episodes 3000
 ```
 
-### Step 3: Train & Analyze
-Launch `train.py` continuously, or use Jupyter to handle experiments with isolated variables. Utilize `matplotlib` to graph the Reward and Loss trajectories across historical episodes to determine learning efficacy.
-
-### Step 4: Live Demo Presentation
-Launch `main.py` directly to observe the best-performing Agent showcasing its complex atmospheric landing trajectories:
-```python
-# Launch the demo runner
+### Watching the Demo
+Watch the trained agent perform in the high-fidelity renderer:
+```bash
 python main.py
 ```
 
 ---
 
-## 📝 License
-This project was implemented for the purposes of academic research and demonstration.
+## 📝 License & References
+Developed for Reinforcement Learning research. 
+- Environment based on [Gymnasium LunarLander](https://gymnasium.farama.org/environments/box2d/lunar_lander/).
+- DQN Theory based on [Mnih et al. (2015)](https://www.nature.com/articles/nature14236).
