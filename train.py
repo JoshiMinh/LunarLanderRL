@@ -15,7 +15,7 @@ from core.game import VastSpaceLander
 from gymnasium.envs.box2d.lunar_lander import FPS
 from core.agent import DQNAgent
 
-def train(n_episodes=2000, max_t=1500, eps_start=1.0, eps_end=0.01, eps_decay=0.995, save_path='models/checkpoint.pth', log_path='results/training_log.csv', reset=False, max_time=None):
+def train(n_episodes=4000, max_t=1500, eps_start=1.0, eps_end=0.05, eps_decay=0.9975, save_path='models/checkpoint.pth', log_path='results/training_log.csv', reset=False, max_time=None):
     """
     Cloud-Optimized Deep Q-Learning with CSV logging, resume support, and headless mode.
     """
@@ -59,9 +59,11 @@ def train(n_episodes=2000, max_t=1500, eps_start=1.0, eps_end=0.01, eps_decay=0.
                     eps = float(log_df.iloc[-1]['epsilon'])
                     history = log_df.to_dict('records')
                     reward_col = 'reward' if 'reward' in log_df.columns else 'score'
-                    for s in log_df.tail(100)[reward_col]:
-                        rewards_window.append(s)
                     print(f"Resuming from Episode {start_episode}. Target: {n_episodes} (Epsilon: {eps:.4f})")
+                else:
+                    print(f"Checkpoint loaded, but log file not found. Starting from Episode 1 with existing weights.")
+            else:
+                print(f"Checkpoint loaded, but log file not found. Starting from Episode 1 with existing weights.")
         except Exception as e:
             print(f"Failed to load checkpoint: {e}. Starting from scratch.")
 
@@ -141,7 +143,7 @@ def train(n_episodes=2000, max_t=1500, eps_start=1.0, eps_end=0.01, eps_decay=0.
 if __name__ == "__main__":
     import argparse
     parser = argparse.ArgumentParser(description="Train Lunar Lander RL Agent")
-    parser.add_argument("--episodes", type=int, default=2000, help="Total number of episodes")
+    parser.add_argument("--episodes", type=int, default=4000, help="Total number of episodes")
     parser.add_argument("--save_path", type=str, default='models/checkpoint.pth', help="Path to save model")
     parser.add_argument("--log_path", type=str, default='results/training_log.csv', help="Path to save logs")
     parser.add_argument("--reset", action="store_true", help="Start training from scratch")

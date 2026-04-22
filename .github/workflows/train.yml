@@ -48,7 +48,7 @@ jobs:
 
     - name: Run Training
       run: |
-        python train.py
+        python train.py ${{ github.event.inputs.reset == 'true' && '--reset' || '' }}
 
     - name: Commit & Push Progress
       uses: stefanzweifel/git-auto-commit-action@v5

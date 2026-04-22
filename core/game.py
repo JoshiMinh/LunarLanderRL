@@ -170,8 +170,8 @@ class VastSpaceLander(LunarLander):
         # 3. Custom Reward (Distance to Pad)
         dist_x = abs(state[0])
         dist_y = abs(state[1])
-        # Reduced velocity penalty so the agent isn't terrified of falling
-        shaping = -100 * (dist_x + dist_y) - 50 * (abs(state[2]) + abs(state[3])) - 100 * abs(state[4])
+        # Reduced penalties to encourage exploration and landing attempts
+        shaping = -50 * (dist_x + dist_y) - 25 * (abs(state[2]) + abs(state[3])) - 50 * abs(state[4])
         
         if self.custom_prev_shaping is not None:
             reward = shaping - self.custom_prev_shaping
@@ -179,12 +179,11 @@ class VastSpaceLander(LunarLander):
             reward = 0
         self.custom_prev_shaping = shaping
 
-        # Small living cost to avoid policy stalling/hovering for too long.
-        # Reduced living cost to give agent more time to refine landing.
-        reward -= 0.015
+        # Minimal living cost to encourage progress rather than hovering
+        reward -= 0.003
         
         if action != 0:
-            reward -= 0.1
+            reward -= 0.01
 
         # Penalize sustained hover near the pad without committing to touchdown.
         no_leg_contact = (state[6] == 0.0 and state[7] == 0.0)
@@ -196,11 +195,11 @@ class VastSpaceLander(LunarLander):
         # 4. Success/Failure Detection
         terminated = False
         
-        # Check if landed on the pad properly
+        # Check if landed on the pad properly - RELAXED conditions for learning
         legs_contact = (state[6] > 0 and state[7] > 0)
-        on_pad = (dist_x < 0.04) # Centered on pad (aligned to physical 6.7m width)
-        safe_vel = (abs(state[2]) < 0.2 and abs(state[3]) < 0.2) # Relaxed safe impact velocity
-        safe_angle = (abs(state[4]) < 0.3) # Relaxed safe angle (~17 degrees)
+        on_pad = (dist_x < 0.12)  # More generous horizontal tolerance (~1/8 of world)
+        safe_vel = (abs(state[2]) < 0.35 and abs(state[3]) < 0.35)  # Allow slightly faster vertical velocity
+        safe_angle = (abs(state[4]) < 0.5)  # ~29 degrees, more lenient
 
         if self.mission_status == 'success':
             self.success_timer_steps -= 1
@@ -210,7 +209,7 @@ class VastSpaceLander(LunarLander):
         # Latch success and keep episode alive for a short showcase window.
         elif legs_contact and on_pad and safe_vel and safe_angle:
             self.mission_status = 'success'
-            reward += 180
+            reward += 150
             self.success_timer_steps = self.success_wait_steps
         # Fail only on crash contact.
         elif self.game_over:
