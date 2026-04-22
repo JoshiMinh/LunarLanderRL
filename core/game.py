@@ -20,8 +20,8 @@ class VastSpaceLander(LunarLander):
         self.user_quit = False
         self.user_skip = False
         self.step_count = 0
-        self.max_episode_steps = FPS * 60 * 5
-        self.success_wait_steps = FPS * 10
+        self.max_episode_steps = 1500 # Reduced from 15,000 to prevent drifting episodes
+        self.success_wait_steps = FPS * 10 if self.render_mode == "human" else int(FPS * 0.4)
         self.success_timer_steps = 0
         
         import core.constants as const

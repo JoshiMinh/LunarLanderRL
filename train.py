@@ -15,7 +15,7 @@ from core.game import VastSpaceLander
 from gymnasium.envs.box2d.lunar_lander import FPS
 from core.agent import DQNAgent
 
-def train(n_episodes=3000, max_t=FPS * 60 * 5, eps_start=1.0, eps_end=0.01, eps_decay=0.995, save_path='models/checkpoint.pth', log_path='results/training_log.csv', reset=False):
+def train(n_episodes=3000, max_t=1500, eps_start=1.0, eps_end=0.01, eps_decay=0.995, save_path='models/checkpoint.pth', log_path='results/training_log.csv', reset=False, max_time=None):
     """
     Cloud-Optimized Deep Q-Learning with CSV logging, resume support, and headless mode.
     """
@@ -67,6 +67,9 @@ def train(n_episodes=3000, max_t=FPS * 60 * 5, eps_start=1.0, eps_end=0.01, eps_
     os.makedirs(os.path.dirname(log_path), exist_ok=True)
 
     interrupted = False
+    timed_out = False
+    total_start_time = time.time()
+    
     pbar = tqdm(range(start_episode, n_episodes + 1), desc="Training")
     try:
         for i_episode in pbar:
@@ -112,6 +115,12 @@ def train(n_episodes=3000, max_t=FPS * 60 * 5, eps_start=1.0, eps_end=0.01, eps_
                 torch.save(agent.qnetwork_local.state_dict(), save_path)
                 pd.DataFrame(history).to_csv(log_path, index=False)
                 break
+            
+            # Check for timeout
+            if max_time and (time.time() - total_start_time > max_time):
+                print(f"\nReached maximum training time ({max_time}s). Saving progress and exiting...")
+                timed_out = True
+                break
     except KeyboardInterrupt:
         interrupted = True
         print("\nTraining interrupted by user (Ctrl+C). Saving progress...")
@@ -119,7 +128,7 @@ def train(n_episodes=3000, max_t=FPS * 60 * 5, eps_start=1.0, eps_end=0.01, eps_
         if history:
             torch.save(agent.qnetwork_local.state_dict(), save_path)
             pd.DataFrame(history).to_csv(log_path, index=False)
-            if interrupted:
+            if interrupted or timed_out:
                 last_ep = history[-1]['episode']
                 print(f"Saved checkpoint and logs up to episode {last_ep}.")
         elif interrupted:
@@ -133,8 +142,9 @@ if __name__ == "__main__":
     parser.add_argument("--episodes", type=int, default=3000, help="Total number of episodes")
     parser.add_argument("--save_path", type=str, default='models/checkpoint.pth', help="Path to save model")
     parser.add_argument("--log_path", type=str, default='results/training_log.csv', help="Path to save logs")
-    parser.add_argument("--reset", action="store_true", help="Start training from scratch, ignoring and deleting existing checkpoints/logs")
+    parser.add_argument("--reset", action="store_true", help="Start training from scratch")
+    parser.add_argument("--max_time", type=int, default=None, help="Stop training after this many seconds")
     args = parser.parse_args()
 
-    history = train(n_episodes=args.episodes, save_path=args.save_path, log_path=args.log_path, reset=args.reset)
+    history = train(n_episodes=args.episodes, save_path=args.save_path, log_path=args.log_path, reset=args.reset, max_time=args.max_time)
     print(f"Training complete. Last episode in log: {history[-1]['episode'] if history else 'None'}")

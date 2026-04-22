@@ -55,7 +55,7 @@ jobs:
           echo "Triggering fresh training start..."
         fi
         
-        python train.py --episodes 3000 $RESET_FLAG
+        python train.py --episodes 3000 --max_time 20000 $RESET_FLAG
 
     - name: Commit & Push Progress
       uses: stefanzweifel/git-auto-commit-action@v5
