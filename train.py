@@ -15,7 +15,7 @@ from core.game import VastSpaceLander
 from gymnasium.envs.box2d.lunar_lander import FPS
 from core.agent import DQNAgent
 
-def train(n_episodes=3000, max_t=1500, eps_start=1.0, eps_end=0.01, eps_decay=0.995, save_path='models/checkpoint.pth', log_path='results/training_log.csv', reset=False, max_time=None):
+def train(n_episodes=2000, max_t=1500, eps_start=1.0, eps_end=0.01, eps_decay=0.995, save_path='models/checkpoint.pth', log_path='results/training_log.csv', reset=False, max_time=None):
     """
     Cloud-Optimized Deep Q-Learning with CSV logging, resume support, and headless mode.
     """
@@ -53,13 +53,15 @@ def train(n_episodes=3000, max_t=1500, eps_start=1.0, eps_end=0.01, eps_decay=0.
             if os.path.exists(log_path):
                 log_df = pd.read_csv(log_path)
                 if not log_df.empty:
-                    start_episode = int(log_df.iloc[-1]['episode']) + 1
+                    last_episode = int(log_df.iloc[-1]['episode'])
+                    start_episode = last_episode + 1
+                    n_episodes = last_episode + n_episodes # Add next 2000
                     eps = float(log_df.iloc[-1]['epsilon'])
                     history = log_df.to_dict('records')
                     reward_col = 'reward' if 'reward' in log_df.columns else 'score'
                     for s in log_df.tail(100)[reward_col]:
                         rewards_window.append(s)
-                    print(f"Resuming from Episode {start_episode} with Epsilon {eps:.4f}")
+                    print(f"Resuming from Episode {start_episode}. Target: {n_episodes} (Epsilon: {eps:.4f})")
         except Exception as e:
             print(f"Failed to load checkpoint: {e}. Starting from scratch.")
 
@@ -139,12 +141,18 @@ def train(n_episodes=3000, max_t=1500, eps_start=1.0, eps_end=0.01, eps_decay=0.
 if __name__ == "__main__":
     import argparse
     parser = argparse.ArgumentParser(description="Train Lunar Lander RL Agent")
-    parser.add_argument("--episodes", type=int, default=3000, help="Total number of episodes")
+    parser.add_argument("--episodes", type=int, default=2000, help="Total number of episodes")
     parser.add_argument("--save_path", type=str, default='models/checkpoint.pth', help="Path to save model")
     parser.add_argument("--log_path", type=str, default='results/training_log.csv', help="Path to save logs")
     parser.add_argument("--reset", action="store_true", help="Start training from scratch")
     parser.add_argument("--max_time", type=int, default=None, help="Stop training after this many seconds")
     args = parser.parse_args()
 
-    history = train(n_episodes=args.episodes, save_path=args.save_path, log_path=args.log_path, reset=args.reset, max_time=args.max_time)
+    history = train(
+        n_episodes=args.episodes, 
+        save_path=args.save_path, 
+        log_path=args.log_path, 
+        reset=args.reset, 
+        max_time=args.max_time
+    )
     print(f"Training complete. Last episode in log: {history[-1]['episode'] if history else 'None'}")

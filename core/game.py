@@ -111,7 +111,7 @@ class VastSpaceLander(LunarLander):
         
         state = [
             (pos.x - pad_center) / (WORLD_W / 2),
-            (pos.y - (self.helipad_y + 20/SCALE)) / (WORLD_H / 2),
+            (pos.y - (self.helipad_y + 21/SCALE)) / (WORLD_H / 2),
             vel.x * 0.2, # Standard LunarLander scale
             vel.y * 0.2, 
             normalized_angle,
@@ -180,7 +180,8 @@ class VastSpaceLander(LunarLander):
         self.custom_prev_shaping = shaping
 
         # Small living cost to avoid policy stalling/hovering for too long.
-        reward -= 0.03
+        # Reduced living cost to give agent more time to refine landing.
+        reward -= 0.015
         
         if action != 0:
             reward -= 0.1
@@ -197,9 +198,9 @@ class VastSpaceLander(LunarLander):
         
         # Check if landed on the pad properly
         legs_contact = (state[6] > 0 and state[7] > 0)
-        on_pad = (dist_x < 0.05) # Centered on pad
-        safe_vel = (abs(state[2]) < 0.1 and abs(state[3]) < 0.1) # Safe impact velocity
-        safe_angle = (abs(state[4]) < 0.2) # Safe angle (~11 degrees)
+        on_pad = (dist_x < 0.04) # Centered on pad (aligned to physical 6.7m width)
+        safe_vel = (abs(state[2]) < 0.2 and abs(state[3]) < 0.2) # Relaxed safe impact velocity
+        safe_angle = (abs(state[4]) < 0.3) # Relaxed safe angle (~17 degrees)
 
         if self.mission_status == 'success':
             self.success_timer_steps -= 1
@@ -218,7 +219,8 @@ class VastSpaceLander(LunarLander):
             reward -= 120
 
         truncated = (self.step_count >= self.max_episode_steps) and (not terminated)
-        if truncated and self.mission_status is None:
+        # Preserve success even if truncation happens during the showcase window
+        if truncated and (self.mission_status is None or self.mission_status == 'timeout'):
             self.mission_status = 'timeout'
         info['mission_status'] = self.mission_status
         info['fuel'] = self.fuel

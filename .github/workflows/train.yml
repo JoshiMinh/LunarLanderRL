@@ -48,14 +48,7 @@ jobs:
 
     - name: Run Training
       run: |
-        # Use --reset if it's a push to main (code change) or if manual reset is requested
-        RESET_FLAG=""
-        if [[ "${{ github.event_name }}" == "push" ]] || [[ "${{ github.event.inputs.reset }}" == "true" ]]; then
-          RESET_FLAG="--reset"
-          echo "Triggering fresh training start..."
-        fi
-        
-        python train.py --episodes 3000 --max_time 20000 $RESET_FLAG
+        python train.py
 
     - name: Commit & Push Progress
       uses: stefanzweifel/git-auto-commit-action@v5
