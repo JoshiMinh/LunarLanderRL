@@ -20,7 +20,7 @@ class VastSpaceLander(LunarLander):
         self.user_quit = False
         self.user_skip = False
         self.step_count = 0
-        self.max_episode_steps = 1500 # Reduced from 15,000 to prevent drifting episodes
+        self.max_episode_steps = 800 # Aggressive limit to prevent timeout-based learning (was 1500)
         self.success_wait_steps = FPS * 10 if self.render_mode == "human" else int(FPS * 0.4)
         self.success_timer_steps = 0
         
@@ -167,11 +167,15 @@ class VastSpaceLander(LunarLander):
 
         state = self._get_observation()
         
-        # 3. Custom Reward (Distance to Pad)
+        # 3. Custom Reward (Distance to Pad) - STRENGTHENED SIGNALS
         dist_x = abs(state[0])
         dist_y = abs(state[1])
-        # Reduced penalties to encourage exploration and landing attempts
-        shaping = -50 * (dist_x + dist_y) - 25 * (abs(state[2]) + abs(state[3])) - 50 * abs(state[4])
+        
+        # Much stronger shaping to guide descent
+        # Horizontal positioning + velocity control + angle stability
+        shaping = -100 * (dist_x ** 1.5) - 50 * (dist_y ** 1.5) \
+                  - 40 * (abs(state[2]) ** 1.5) - 50 * (abs(state[3]) ** 1.5) \
+                  - 80 * (abs(state[4]) ** 1.5)
         
         if self.custom_prev_shaping is not None:
             reward = shaping - self.custom_prev_shaping
@@ -179,35 +183,41 @@ class VastSpaceLander(LunarLander):
             reward = 0
         self.custom_prev_shaping = shaping
 
-        # Minimal living cost to encourage progress rather than hovering
-        reward -= 0.003
+        # Higher living cost to prevent indefinite hovering
+        reward -= 0.008
         
+        # Penalty for using thrusters (encourages efficient control)
         if action != 0:
-            reward -= 0.01
+            reward -= 0.02
 
-        # Penalize sustained hover near the pad without committing to touchdown.
+        # BONUS: Reward controlled descent when near pad (below 0.5 height, moving down)
+        approaching_pad = (dist_y < 0.5 and state[3] < -0.05)  # descending
+        if approaching_pad:
+            reward += 0.05
+
+        # STRONG hover penalty: Not moving much vertically but not landed
         no_leg_contact = (state[6] == 0.0 and state[7] == 0.0)
-        near_pad = (dist_x < 0.15 and dist_y < 0.35)
-        near_zero_vertical = abs(state[3]) < 0.05
-        if self.mission_status != 'success' and no_leg_contact and near_pad and near_zero_vertical:
-            reward -= 0.25
+        near_pad = (dist_x < 0.20 and dist_y < 0.40)
+        low_vertical_speed = (abs(state[3]) < 0.08)  # Almost stationary
+        if self.mission_status != 'success' and no_leg_contact and near_pad and low_vertical_speed:
+            reward -= 1.0  # Much stronger penalty for hovering
 
         # 4. Success/Failure Detection
         terminated = False
         
-        # Check if landed on the pad properly - RELAXED conditions for learning
-        legs_contact = (state[6] > 0 and state[7] > 0)
-        on_pad = (dist_x < 0.12)  # More generous horizontal tolerance (~1/8 of world)
-        safe_vel = (abs(state[2]) < 0.35 and abs(state[3]) < 0.35)  # Allow slightly faster vertical velocity
-        safe_angle = (abs(state[4]) < 0.5)  # ~29 degrees, more lenient
+        # Check if landed on the pad - RELAXED to allow single leg contact
+        any_leg_contact = (state[6] > 0 or state[7] > 0)
+        on_pad = (dist_x < 0.15)  # Horizontal tolerance
+        safe_vel = (abs(state[2]) < 0.5 and abs(state[3]) < 0.5)  # More lenient velocity threshold
+        safe_angle = (abs(state[4]) < 0.6)  # ~34 degrees
 
         if self.mission_status == 'success':
             self.success_timer_steps -= 1
             reward = 0.0
             if self.success_timer_steps <= 0:
                 terminated = True
-        # Latch success and keep episode alive for a short showcase window.
-        elif legs_contact and on_pad and safe_vel and safe_angle:
+        # Latch success if ANY leg contacts + on pad + safe conditions
+        elif any_leg_contact and on_pad and safe_vel and safe_angle:
             self.mission_status = 'success'
             reward += 150
             self.success_timer_steps = self.success_wait_steps

@@ -11,7 +11,7 @@ BUFFER_SIZE = int(1e5)  # replay buffer size
 BATCH_SIZE = 128         # minibatch size
 GAMMA = 0.99            # discount factor
 TAU = 1e-3              # for soft update of target parameters
-LR = 3e-4               # learning rate 
+LR = 5e-4               # learning rate (increased from 3e-4 for faster learning)
 UPDATE_EVERY = 4        # more stable updates
 
 class DQNAgent:
