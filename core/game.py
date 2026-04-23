@@ -162,7 +162,7 @@ class VastSpaceLander(LunarLander):
                 f_v = (0, 12.0 * 20.0) 
                 self.lander.ApplyForceToCenter(self.lander.GetWorldVector(f_v), True)
             elif action in [1, 3]: # Side Engines
-                f_s = (1.0 if action==3 else -1.0) * (2.0 * 20.0) 
+                f_s = (1.0 if action==1 else -1.0) * (2.0 * 20.0) 
                 self.lander.ApplyForceToCenter(self.lander.GetWorldVector((f_s, 0)), True)
 
         state = self._get_observation()

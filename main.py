@@ -7,6 +7,7 @@ from core.agent import DQNAgent
 def run_demo(checkpoint_path='models/checkpoint.pth'):
     """Run a demo of the trained agent."""
     env = VastSpaceLander(render_mode='human')
+    env.max_episode_steps = 3000 # 60 seconds at 50 FPS
     state_size = env.observation_space.shape[0]
     action_size = env.action_space.n
     
