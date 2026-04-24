@@ -20,9 +20,10 @@ class VastSpaceLander(LunarLander):
         self.user_quit = False
         self.user_skip = False
         self.step_count = 0
-        self.max_episode_steps = 800 # Aggressive limit to prevent timeout-based learning (was 1500)
+        self.max_episode_steps = 5000 # Allow full mission duration. Matches fuel capacity for hovering.
         self.success_wait_steps = FPS * 10 if self.render_mode == "human" else int(FPS * 0.4)
         self.success_timer_steps = 0
+        self.beacon_state = 0 # For flashing effect in renderer
         
         import core.constants as const
         self.stars = generate_cosmos(const.CUSTOM_VIEWPORT_W, const.CUSTOM_VIEWPORT_H)
@@ -183,17 +184,23 @@ class VastSpaceLander(LunarLander):
             reward = 0
         self.custom_prev_shaping = shaping
 
-        # Higher living cost to prevent indefinite hovering
-        reward -= 0.008
+        # Higher living cost to prevent indefinite hovering (strengthened from 0.008)
+        reward -= 0.05
         
         # Penalty for using thrusters (encourages efficient control)
         if action != 0:
-            reward -= 0.02
+            reward -= 0.05
 
         # BONUS: Reward controlled descent when near pad (below 0.5 height, moving down)
-        approaching_pad = (dist_y < 0.5 and state[3] < -0.05)  # descending
+        approaching_pad = (dist_y < 0.8 and state[3] < -0.05)  # descending from higher up
         if approaching_pad:
-            reward += 0.05
+            # Reward proportional to descent speed to encourage landing faster
+            reward += 0.2 * abs(state[3]) 
+        
+        # Horizontal correction reward
+        if dist_y < 0.5 and dist_x > 0.1:
+            if (state[0] > 0 and state[2] < 0) or (state[0] < 0 and state[2] > 0):
+                reward += 0.05 # Moving towards center
 
         # STRONG hover penalty: Not moving much vertically but not landed
         no_leg_contact = (state[6] == 0.0 and state[7] == 0.0)
@@ -219,7 +226,13 @@ class VastSpaceLander(LunarLander):
         # Latch success if ANY leg contacts + on pad + safe conditions
         elif any_leg_contact and on_pad and safe_vel and safe_angle:
             self.mission_status = 'success'
-            reward += 150
+            
+            # DYNAMIC SUCCESS REWARDS
+            base_reward = 200
+            fuel_reward = self.fuel * 0.8 # Strong incentive to save fuel
+            speed_reward = (self.max_episode_steps - self.step_count) * 0.05 # Incentive to land fast
+            
+            reward += (base_reward + fuel_reward + speed_reward)
             self.success_timer_steps = self.success_wait_steps
         # Fail only on crash contact.
         elif self.game_over:

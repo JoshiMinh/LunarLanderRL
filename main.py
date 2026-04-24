@@ -7,7 +7,7 @@ from core.agent import DQNAgent
 def run_demo(checkpoint_path='models/checkpoint.pth'):
     """Run a demo of the trained agent."""
     env = VastSpaceLander(render_mode='human')
-    env.max_episode_steps = 3000 # 60 seconds at 50 FPS
+    env.max_episode_steps = 5000 # Allow full mission duration
     state_size = env.observation_space.shape[0]
     action_size = env.action_space.n
     
@@ -46,7 +46,10 @@ def run_demo(checkpoint_path='models/checkpoint.pth'):
 
 if __name__ == "__main__":
     import os
-    if os.path.exists('models/checkpoint.pth'):
-        run_demo()
-    else:
-        print("Model checkpoint not found. Please train the agent first using train.py.")
+    try:
+        if os.path.exists('models/checkpoint.pth'):
+            run_demo()
+        else:
+            print("Model checkpoint not found. Please train the agent first using train.py.")
+    except KeyboardInterrupt:
+        print("\n[!] Demo interrupted by user. Exiting gracefully...")

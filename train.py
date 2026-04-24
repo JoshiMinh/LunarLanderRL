@@ -15,7 +15,7 @@ from core.game import VastSpaceLander
 from gymnasium.envs.box2d.lunar_lander import FPS
 from core.agent import DQNAgent
 
-def train(n_episodes=4000, max_t=1500, eps_start=1.0, eps_end=0.05, eps_decay=0.995, save_path='models/checkpoint.pth', log_path='results/training_log.csv', reset=False, max_time=None):
+def train(n_episodes=3000, max_t=5000, eps_start=1.0, eps_end=0.05, eps_decay=0.995, save_path='models/checkpoint.pth', log_path='results/training_log.csv', reset=False, max_time=None):
     """
     Cloud-Optimized Deep Q-Learning with CSV logging, resume support, and headless mode.
     """

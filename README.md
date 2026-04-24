@@ -30,6 +30,8 @@ The agent perceives a normalized state vector representing its relationship to t
 -   **Fuel Management**: Engines consume fuel rapidly; running out results in a ballistic descent.
 -   **Starship Lander**: A custom "Starship" style polygon with unique aerodynamic properties.
 -   **Vast Landscape**: A procedurally generated, rugged lunar surface that requires precision to find the pad.
+-   **Safe Descent Window**: A generous 5,000-step (100-second) limit to allow for cautious, realistic landings.
+-   **Visual Guidance**: High-visibility green landing pad with **White Pulsing Beacons** that scale with the camera.
 
 ---
 
@@ -53,6 +55,15 @@ graph LR
     A --> Q
 ```
 
+### 🏆 Optimized Reward Function
+The agent is trained on a highly competitive reward structure designed for precision:
+- **Base Landing**: +200 points.
+- **Fuel Bonus**: +0.8 points for every Liter of fuel saved (up to **+240**).
+- **Speed Bonus**: +0.05 points for every step saved under the 5,000 limit (up to **+250**).
+- **Descent Reinforcement**: Proportional bonus for downward velocity when centered over the pad.
+- **Hovering Penalty**: -0.05 living cost per step to ensure a fast approach.
+- **Crash/Failure**: -120 points.
+
 ---
 
 ## 🛠️ Getting Started
@@ -67,10 +78,10 @@ pip install gymnasium[box2d] torch matplotlib tqdm pandas pygame
 The training script is optimized for headless server environments but works locally. It supports **automatic resuming**: if `models/checkpoint.pth` is found, the agent loads its weights and continues.
 
 ```bash
-# Train for the recommended 4000 episodes
-python train.py --episodes 4000
+# Train for the recommended 3000 episodes
+python train.py --episodes 3000
 
-# Start from scratch (deletes old weights)
+# Start from scratch (recommended after reward changes)
 python train.py --reset
 ```
 

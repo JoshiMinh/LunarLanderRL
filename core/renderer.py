@@ -103,10 +103,30 @@ class Renderer:
                 pygame.draw.polygon(self.surf, (30, 30, 32), screen_poly)
                 pygame.draw.line(self.surf, (110, 110, 115), screen_poly[0], screen_poly[1], max(1, int(1 * self.zoom)))
 
-        # 3. Landing Pad
+        # 3. Landing Pad with Flashing Beacons
         ps1 = to_screen(env.helipad_x1 * SCALE, CUSTOM_VIEWPORT_H - env.helipad_y * SCALE)
         ps2 = to_screen(env.helipad_x2 * SCALE, CUSTOM_VIEWPORT_H - env.helipad_y * SCALE)
-        pygame.draw.line(self.surf, (50, 255, 150), ps1, ps2, max(1, int(3 * self.zoom)))
+        
+        # Draw the main pad line (Strong Green)
+        pygame.draw.line(self.surf, (0, 255, 100), ps1, ps2, max(1, int(4 * self.zoom)))
+        
+        # Draw Beacons (White Pulsing Lights)
+        env.beacon_state = (env.beacon_state + 1) % 60
+        pulse = 0.5 + 0.5 * np.sin(env.beacon_state * (np.pi / 30)) # Pulsing factor 0 to 1
+        
+        beacon_color = (255, 255, 255) # White Beacon
+        for pos in [ps1, ps2]:
+            # Dynamic size relative to zoom and pulse
+            glow_radius = int((15 + 10 * pulse) * self.zoom)
+            bulb_radius = int((4 + 2 * pulse) * self.zoom)
+            
+            # Draw light glow
+            glow = pygame.Surface((glow_radius * 2, glow_radius * 2), pygame.SRCALPHA)
+            pygame.draw.circle(glow, (*beacon_color, int(100 * pulse)), (glow_radius, glow_radius), glow_radius)
+            self.surf.blit(glow, (pos[0] - glow_radius, pos[1] - glow_radius))
+            
+            # Draw beacon bulb
+            pygame.draw.circle(self.surf, beacon_color, (pos[0], pos[1]), max(1, bulb_radius))
 
         # 4. Exhaust Particles (High Fidelity)
         for obj in getattr(env, 'particles', []):
