@@ -28,7 +28,12 @@ def train(n_episodes=3000, max_t=5000, eps_start=1.0, eps_end=0.05, eps_decay=0.
     
     agent = DQNAgent(state_size=state_size, action_size=action_size, seed=0, device=device)
     
-    # --- Resume Support ---
+    # --- Resume Support: Checkpoint Resumption Logic ---
+    # This section handles three scenarios:
+    # 1. reset=True → delete checkpoint and log, train from scratch
+    # 2. reset=False + checkpoint exists → load checkpoint and resume from last episode
+    # 3. reset=False + no checkpoint → train from scratch (first run)
+    
     start_episode = 1
     rewards = []
     rewards_window = deque(maxlen=100)
@@ -36,36 +41,38 @@ def train(n_episodes=3000, max_t=5000, eps_start=1.0, eps_end=0.05, eps_decay=0.
     history = []
 
     if reset:
-        print("Reset flag detected. Starting training from scratch...")
+        print("🔄 Reset flag detected. Starting training from scratch...")
         if os.path.exists(save_path):
             os.remove(save_path)
-            print(f"Deleted old checkpoint: {save_path}")
+            print(f"   ✓ Deleted old checkpoint: {save_path}")
         if os.path.exists(log_path):
             os.remove(log_path)
-            print(f"Deleted old logs: {log_path}")
+            print(f"   ✓ Deleted old logs: {log_path}")
     elif os.path.exists(save_path):
-        print(f"Loading checkpoint from {save_path}...")
+        print(f"📦 Checkpoint found at {save_path}. Attempting to resume...")
         try:
             agent.qnetwork_local.load_state_dict(torch.load(save_path, map_location=device))
             agent.qnetwork_target.load_state_dict(torch.load(save_path, map_location=device))
             
-            # Try to recover epsilon and episode count from log
+            # Try to recover epsilon and episode count from training log
             if os.path.exists(log_path):
                 log_df = pd.read_csv(log_path)
                 if not log_df.empty:
                     last_episode = int(log_df.iloc[-1]['episode'])
                     start_episode = last_episode + 1
-                    n_episodes = last_episode + n_episodes # Add next 2000
+                    n_episodes = last_episode + n_episodes  # Add next batch of episodes
                     eps = float(log_df.iloc[-1]['epsilon'])
                     history = log_df.to_dict('records')
                     reward_col = 'reward' if 'reward' in log_df.columns else 'score'
-                    print(f"Resuming from Episode {start_episode}. Target: {n_episodes} (Epsilon: {eps:.4f})")
+                    print(f"   ✓ Resumed from Episode {start_episode}. Target: {n_episodes} (Epsilon: {eps:.4f})")
                 else:
-                    print(f"Checkpoint loaded, but log file not found. Starting from Episode 1 with existing weights.")
+                    print(f"   ⚠ Checkpoint loaded, but log file empty. Starting from Episode 1 with existing weights.")
             else:
-                print(f"Checkpoint loaded, but log file not found. Starting from Episode 1 with existing weights.")
+                print(f"   ⚠ Checkpoint loaded, but no log file. Starting from Episode 1 with existing weights.")
         except Exception as e:
-            print(f"Failed to load checkpoint: {e}. Starting from scratch.")
+            print(f"   ✗ Failed to load checkpoint: {e}. Starting from scratch.")
+    else:
+        print("🆕 No checkpoint found. Starting fresh training from Episode 1.")
 
     os.makedirs(os.path.dirname(save_path), exist_ok=True)
     os.makedirs(os.path.dirname(log_path), exist_ok=True)

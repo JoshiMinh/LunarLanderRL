@@ -1,5 +1,7 @@
 # 🚀 LunarLanderRL: Deep Reinforcement Learning for Precision Descent
 
+> **Last Updated:** May 1, 2026
+>
 [![Python 3.8+](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
 [![PyTorch](https://img.shields.io/badge/PyTorch-EE4C2C?logo=pytorch&logoColor=white)](https://pytorch.org/)
 [![Gymnasium](https://img.shields.io/badge/Gymnasium-20B2AA?logo=openai&logoColor=white)](https://gymnasium.farama.org/)

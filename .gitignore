@@ -1,162 +1,42 @@
-# Byte-compiled / optimized / DLL files
+# Standard Python ignores
 __pycache__/
 *.py[cod]
 *$py.class
-
-# C extensions
 *.so
 
-# Distribution / packaging
-.Python
-build/
-develop-eggs/
-dist/
-downloads/
-eggs/
-.eggs/
-lib/
-lib64/
-parts/
-sdist/
-var/
-wheels/
-share/python-wheels/
-*.egg-info/
-.installed.cfg
-*.egg
-MANIFEST
-
-# PyInstaller
-#  Usually these files are written by a python script, and contain methods for
-#  installing packages into a virtual environment.
-*.manifest
-*.spec
-
-# Installer logs
-pip-log.txt
-pip-delete-this-directory.txt
-
-# Unit test / coverage reports
-htmlcov/
-.tox/
-.nox/
-.coverage
-.coverage.*
-.cache
-nosetests.xml
-coverage.xml
-*.cover
-*.py,cover
-.hypothesis/
-.pytest_cache/
-pytestdebug.log
-
-# Translations
-*.mo
-*.pot
-
-# Django stuff:
-*.log
-local_settings.py
-db.sqlite3
-db.sqlite3-journal
-
-# Flask stuff:
-instance/
-.webassets-cache
-
-# Scrapy stuff:
-.scrapy
-
-# Sphinx documentation
-docs/_build/
-
-# PyBuilder
-.pybuilder/
-target/
-
-# Jupyter Notebook
-.ipynb_checkpoints
-
-# IPython
-profile_default/
-ipython_config.py
-
-# pyenv
-#   For a library or binary, you wish to ignore these files tonight to prevent users
-#   from using a specific version of python.
-# .python-version
-
-# pipenv
-#   According to pypa/pipenv#1255, lock files are recommended to be committed.
-#   But if you're building a library, keep them out.
-#Pipfile.lock
-
-# poetry
-#   Similar to Pipenv, see https://python-poetry.org/docs/basic-usage/#commit-your-pyprojectlock-file-to-git
-#pyproject.lock
-
-# pdm
-#   Similar to Pipenv, see https://pdm.fming.dev/#use-pdm-in-a-project
-.pdm.toml
-.pdm-python
-.pdm-build/
-
-# PEP 582; used by e.g. github.com/pdm-project/pdm
-__pypackages__/
-
-# Celery stuff
-celerybeat-schedule
-celerybeat.pid
-
-# SageMath parsed files
-*.sage.py
-
-# Environments
+# Virtual environments
 .env
 .venv
 env/
 venv/
 ENV/
-env.bak/
-venv.bak/
 
-# Spyder project settings
-.spyderproject
-.spyproject
+# Distribution / packaging
+build/
+dist/
+*.egg-info/
+Wheels/
 
-# Rope project settings
-.ropeproject
-
-# mkdocs documentation
-/site
-
-# mypy
-.mypy_cache/
-.dmypy.json
-dmypy.json
-
-# Pyre type checker
-.pyre/
-
-# pytype static type analyzer
-.pytype/
-
-# Cython debug symbols
-cython_debug/
-
-# PyCharm
+# Editor/IDE
+.vscode/
 .idea/
 
-# VS Code
-.vscode/
+# Jupyter
+.ipynb_checkpoints
 
-# Project Specific
-# Allow key files for GitHub Actions Sync
+# Test / coverage
+.tox/
+.nox/
+.pytest_cache/
+.coverage
+
+# Type checkers
+.mypy_cache/
+.pytype/
+
+# Project-specific
 !models/checkpoint.pth
 !results/training_log.csv
-
-# Keep ignoring other temporary results
 results/*.png
 results/*.jpg
 results/*.mp4

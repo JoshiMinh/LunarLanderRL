@@ -1,7 +1,8 @@
 gymnasium[box2d]
 torch
-pandas
-tqdm
 numpy
-pygame
+pandas
 matplotlib
+tqdm
+pygame
+jupyter
